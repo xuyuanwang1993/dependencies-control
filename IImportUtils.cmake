@@ -26,10 +26,17 @@ if(EXISTS "${REPO_DENPENDENCIES_GEN_PATH}")
   endif()
 endif()
 
+macro(declare_disable_repo_import repo_name state_flag description)
+  option(__DISABLE_IMPORT_${repo_name} "${description}" ${state_flag})
+endmacro()
+
 
 set_property(GLOBAL PROPERTY IMPORTED_REPO_LIST_PROP)
 function(import_repo repo_folder_name search_key_item_in_folder)
-
+  if(__DISABLE_IMPORT_${repo_folder_name})
+      message(STATUS "disable import ${repo_folder_name}")
+      return()
+  endif()
   get_property(imported_repo_list GLOBAL PROPERTY IMPORTED_REPO_LIST_PROP)
 
   # Early return if already imported

@@ -25,3 +25,14 @@ $$linux
 $$windows
 利用gen-dependencies.bat手动更新依赖
 ```
+
+# cmake可用option
+```
+DependeciesFileName 依赖文件文件名  默认值:.denpendencies.txt
+AUTO_GENERATE_DENPENDECIES 是否自动生成依赖 默认值:OFF
+AUTO_SYNC_DENPENDECIES 是否同步依赖 默认值:OFF
+AUTO_SYNC_DENPENDECIES_ONLYCHECK 是否仅检查依赖不执行依赖同步 默认值:OFF
+ENABLE_AUTO_CLEAN_REPO 是否自动清理repo dirty状态 默认值:OFF
+ENABLE_FORCE_SYNC_NEWEST_BRANCH 是否强制同步分支最新提交 默认值:OFF
+ENABLE_AUTO_PRUNE_ORIGIN_BRANCH 是否自动删除已经delete的远程分支 默认值:OFF
+```

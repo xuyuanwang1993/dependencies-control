@@ -4,11 +4,13 @@
 
 # Include guards
 if(__NATIVE_DENPENDENCIES__)
-    return()
+  return()
 endif()
 set(__NATIVE_DENPENDENCIES__ TRUE)
+if("${DependeciesFileName}" STREQUAL "")
+  set(DependeciesFileName ".denpendencies.txt")
+endif()
 
-set(DependeciesFileName ".denpendencies.txt")
 set(DependeciesTempFileNameSuffix ".tmp")
 function(make_real_path INPUT_PATH)
   file(REAL_PATH ${${INPUT_PATH}} ACTUAL_PATH)
@@ -37,6 +39,8 @@ option(AUTO_GENERATE_DENPENDECIES "auto generate denependenies" OFF)
 option(AUTO_SYNC_DENPENDECIES "auto generate denependenies" OFF)
 option(AUTO_SYNC_DENPENDECIES_ONLYCHECK "auto generate denependenies" OFF)
 option(ENABLE_AUTO_CLEAN_REPO "auto clean repo" OFF)
+option(ENABLE_FORCE_SYNC_NEWEST_BRANCH "force sync branch newest commit" OFF)
+option(ENABLE_AUTO_PRUNE_ORIGIN_BRANCH "auto prune  deleted origin branch" OFF)
 # get git repo's current version
 function(get_package_version REPO_DIR RET_STR)
   set(TEMP_VERSION "")
@@ -202,19 +206,34 @@ function(switch_version REPO_NAME REPO_URL BRANCH_NAME COMMIT_INFO)
     WORKING_DIRECTORY "${DependenciesRootDir}/${REPO_NAME}"
     RESULT_VARIABLE RESULT
     ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+  if(ENABLE_AUTO_PRUNE_ORIGIN_BRANCH)
+    execute_process(
+      COMMAND ${GIT_EXECUTABLE} remote prune origin
+      WORKING_DIRECTORY "${DependenciesRootDir}/${REPO_NAME}"
+      ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+  endif()
   # check version
   get_package_version(${DependenciesRootDir}/${REPO_NAME} RET_STR)
+
   if(NOT "${RET_STR_VERSION}" STREQUAL "${COMMIT_INFO}")
-    # switch commit
-    execute_process(
-      COMMAND ${GIT_EXECUTABLE} checkout ${COMMIT_INFO} --quiet
-      WORKING_DIRECTORY "${DependenciesRootDir}/${REPO_NAME}"
-      RESULT_VARIABLE RESULT
-      ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
-    if(NOT RESULT EQUAL 0)
-      message(FATAL_ERROR "checkout cmmit to ${COMMIT_INFO}  failed")
-      return()
+    if(NOT ENABLE_FORCE_SYNC_NEWEST_BRANCH)
+      # switch commit
+      execute_process(
+        COMMAND ${GIT_EXECUTABLE} checkout ${COMMIT_INFO} --quiet
+        WORKING_DIRECTORY "${DependenciesRootDir}/${REPO_NAME}"
+        RESULT_VARIABLE RESULT
+        ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+      if(NOT RESULT EQUAL 0)
+        message(FATAL_ERROR "checkout cmmit to ${COMMIT_INFO}  failed")
+        return()
+      endif()
+    else()
+      message(
+        WARNING
+          "force switch  ${REPO_NAME} commit from ${COMMIT_INFO} to ${RET_STR_VERSION} "
+      )
     endif()
+
   endif()
 
   # sync submodule
@@ -320,10 +339,8 @@ function(
   if(NOT "${old_repo_branch}" STREQUAL "${RET_STR_BRANCH}")
     message(STATUS "${repo_name}\t${old_repo_branch} -> ${RET_STR_BRANCH}")
   endif()
-  file(
-    APPEND ${out_path}
-    "${repo_name}\t${RET_STR_BRANCH}\t${RET_STR_VERSION}\t${RET_STR_URL}\n"
-  )
+  file(APPEND ${out_path}
+       "${repo_name}\t${RET_STR_BRANCH}\t${RET_STR_VERSION}\t${RET_STR_URL}\n")
 endfunction()
 
 function(get_sub_directories DIR_NAME RET_DIR_LIST)
@@ -484,7 +501,7 @@ if(AUTO_SYNC_DENPENDECIES)
     set(OUT_PUT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/")
   endif()
   make_real_path(OUT_PUT_PATH)
-  file(MAKE_DIRECTORY ${DependenciesRootDir}) 
+  file(MAKE_DIRECTORY ${DependenciesRootDir})
   message(
     STATUS
       "OUT_PUT_PATH=${OUT_PUT_PATH} DependenciesRootDir=${DependenciesRootDir}")
@@ -500,4 +517,38 @@ function(gen_target_denpendencies target_name script_path config_path)
     COMMENT "Generating ${DependeciesFileName}"
     VERBATIM)
 
+endfunction()
+
+function(get_library_dependencies target_name all_deps visited_deps)
+  set(_input_link_libraries LINK_LIBRARIES)
+  get_target_property(_input_type ${target_name} TYPE)
+
+  if(${_input_type} STREQUAL "INTERFACE_LIBRARY")
+      set(_input_link_libraries INTERFACE_LINK_LIBRARIES)
+  endif() 
+  get_target_property(DIRECT_DEPS ${target_name}   ${_input_link_libraries}) 
+  list(APPEND ${all_deps} ${DIRECT_DEPS})  
+  foreach(DEP ${DIRECT_DEPS})  
+      if(NOT "${DEP}" IN_LIST visited_deps)  
+          list(APPEND visited_deps ${DEP})
+          if(TARGET ${DEP})
+          get_library_dependencies(${DEP} ${all_deps} "${visited_deps}")  
+          else()
+          message(STATUS "${target_name} DEP=${DEP} is not a target") 
+            continue()
+          endif()
+          
+      endif()  
+  endforeach()
+  list(REMOVE_DUPLICATES ${all_deps})
+  list(REMOVE_ITEM ${all_deps} DIRECT_DEPS-NOTFOUND)
+  set(${all_deps} ${${all_deps}} PARENT_SCOPE)   
+endfunction()
+
+function(write_library_dependencies target_name dst_file_path)
+  get_library_dependencies(${target_name} LIBRARY_DEPS "DIRECT_DEPS-NOTFOUND")
+  foreach(DEP ${LIBRARY_DEPS})
+  file(APPEND ${dst_file_path}
+       "${DEP}\n")
+  endforeach()
 endfunction()

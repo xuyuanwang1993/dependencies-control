@@ -2,28 +2,26 @@
 if "%~1"=="--help" (
     echo "1:previous denpendencies config path"
     echo "2:git repos common root path"
-    echo "3:denpendences cmake moudule path"
+    echo "3:extra cmake config"
     exit 0
 )
 set OutPutPath=%~1
 set DenpendenciesDir=%~2
-set DenpendenciesCmakePath=%~3
+set ExtraCmakeConfig=%~3
 if "%OutPutPath%"=="" (
     for /f %%i in ('cd') do     set OutPutPath=%%i
 )
 if "%DenpendenciesDir%"=="" (
     set DenpendenciesDir=%~dp0/../../
 )
-if "%DenpendenciesCmakePath%"=="" (
-    set DenpendenciesCmakePath=%~dp0/NativeDenpendencies.cmake
-)
-for %%I in ("%DenpendenciesCmakePath%") do set "DenpendenciesCmakePath=%%~fI"
+
+
 for %%I in ("%OutPutPath%") do set "OutPutPath=%%~fI"
 for %%I in ("%DenpendenciesDir%") do set "DenpendenciesDir=%%~fI"
 
 echo "1:previous denpendencies config path-->OutPutPath=%OutPutPath%"
 echo "2:git repos common root path---------->DenpendenciesDir=%DenpendenciesDir%"
-echo "3:denpendences cmake moudule path----->DenpendenciesCmakePath=%DenpendenciesCmakePath%"  
+echo "3:extra cmake config----->ExtraCmakeConfig=%ExtraCmakeConfig%"  
 pushd %OutPutPath%
-cmake -DAUTO_SYNC_DENPENDECIES=ON -DENABLE_FORCE_SYNC_NEWEST_BRANCH=ON -DOUT_PUT_PATH=%OutPutPath% -DDependenciesRootDir=%DenpendenciesDir% -P %DenpendenciesCmakePath% 
+cmake -DAUTO_SYNC_DENPENDECIES=ON -DENABLE_FORCE_SYNC_NEWEST_BRANCH=ON -DOUT_PUT_PATH=%OutPutPath% -DDependenciesRootDir=%DenpendenciesDir% %ExtraCmakeConfig% -P  %~dp0/NativeDenpendencies.cmake
 popd 
