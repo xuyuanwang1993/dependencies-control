@@ -31,7 +31,9 @@ endif()
 make_real_path(DependenciesRootDir)
 
 # enable return expression's param
-cmake_policy(SET CMP0140 NEW)
+if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.27")
+  cmake_policy(SET CMP0140 NEW)
+endif()
 cmake_policy(SET CMP0007 NEW)
 find_package(Git QUIET)
 
