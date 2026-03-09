@@ -35,7 +35,7 @@ echo "3:extra cmake config----->\tExtraCmakeConfig=$ExtraCmakeConfig"
 pushd "$OutPutPath" 
   
 # 执行cmake命令  
-cmake -DAUTO_SYNC_DENPENDECIES=ON -DOUT_PUT_PATH="$OutPutPath" -DDependenciesRootDir="$DenpendenciesDir" $ExtraCmakeConfig -P  "$script_dir/NativeDenpendencies.cmake"  
+cmake -DAUTO_SYNC_DENPENDECIES=ON -DENABLE_FORCE_SYNC_NEWEST_BRANCH=ON -DOUT_PUT_PATH="$OutPutPath" -DDependenciesRootDir="$DenpendenciesDir" $ExtraCmakeConfig -P  "$script_dir/NativeDenpendencies.cmake"  
   
 # 返回到原始目录  
 popd
