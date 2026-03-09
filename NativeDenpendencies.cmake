@@ -96,9 +96,9 @@ function(get_package_branch_name REPO_DIR RET_STR COMMIT_ID)
       endforeach()
     endif()
   endif()
-
+  string(STRIP "${TEMP_BRANCH}" CLEAN_TEMP_BRANCH)
   set(${RET_STR}_BRANCH
-      "${TEMP_BRANCH}"
+      "${CLEAN_TEMP_BRANCH}"
       PARENT_SCOPE)
 endfunction()
 
@@ -221,7 +221,6 @@ function(switch_version REPO_NAME REPO_URL BRANCH_NAME COMMIT_INFO)
   endif()
   # check version
   get_package_version(${DependenciesRootDir}/${REPO_NAME} RET_STR)
-
   if(NOT "${RET_STR_VERSION}" STREQUAL "${COMMIT_INFO}")
     if(NOT ENABLE_FORCE_SYNC_NEWEST_BRANCH)
       # switch commit
@@ -268,7 +267,8 @@ endfunction()
 
 function(sync_repo REPO_NAME REPO_URL BRANCH_NAME COMMIT_INFO)
   check_sync_state(${REPO_NAME} ${REPO_URL} ${BRANCH_NAME} ${COMMIT_INFO} RET)
-  if(RET)
+  
+  if(RET AND NOT ENABLE_FORCE_SYNC_NEWEST_BRANCH)
     return()
   endif()
   if(AUTO_SYNC_DENPENDECIES_ONLYCHECK)
