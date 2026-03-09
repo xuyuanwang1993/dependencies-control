@@ -83,12 +83,17 @@ function(get_package_branch_name REPO_DIR RET_STR COMMIT_ID)
       WORKING_DIRECTORY "${REPO_DIR}"
       OUTPUT_VARIABLE TEMP_BRANCHS
       ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
-
     string(REGEX REPLACE "\n" ";" TEMP_BRANCHS_LINES "${TEMP_BRANCHS}")
     list(LENGTH TEMP_BRANCHS_LINES LINES_NUM)
     # select the first branch which contains the commit
     if(LINES_NUM GREATER 1)
-      list(GET TEMP_BRANCHS_LINES 1 TEMP_BRANCH)
+      foreach(line IN LISTS TEMP_BRANCHS_LINES)
+        string(FIND "${line}" "*" STAR_POS)
+        if(STAR_POS EQUAL -1)
+          set(TEMP_BRANCH "${line}")
+          break()
+        endif()
+      endforeach()
     endif()
   endif()
 
