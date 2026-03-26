@@ -13,7 +13,7 @@ endif()
 
 set(DependeciesTempFileNameSuffix ".tmp")
 function(make_real_path INPUT_PATH)
-  file(REAL_PATH ${${INPUT_PATH}} ACTUAL_PATH)
+  get_filename_component(ACTUAL_PATH "${${INPUT_PATH}}" REALPATH)
   set(${INPUT_PATH}
       "${ACTUAL_PATH}"
       PARENT_SCOPE)
